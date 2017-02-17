@@ -31,6 +31,84 @@
     {{ if (author) }}
     <div>{{ author.name }}</div>
     {{ endif }}
+    <span>more here from {{ message }}</span>
+  </div>
+</template>
+
+<template id="3c">
+  <div class="box">
+    <h1>{{ title }}</h1>
+    <p>{{ message }}</p>
+    {{ if (author !== undefined) }}
+    <div>{{ author.name }}</div>
+    {{ endif }}
+    <span>more here from {{ message }}</span>
+  </div>
+</template>
+
+<template id="3d">
+  <div class="box">
+    <h1>{{ title }}</h1>
+    <p>{{ message }}</p>
+    {{ if (author.name === "pix") }}
+    <div>{{ author.name }}</div>
+    {{ endif }}
+    <span>more here from {{ message }}</span>
+  </div>
+</template>
+
+<template id="3e">
+  <div class="box">
+    <h1>{{ title }}</h1>
+    <p>{{ message }}</p>
+    {{ if (author.name.toUpperCase() === 'PIX') }}
+    <div>{{ author.name }}</div>
+    {{ endif }}
+    <span>more here from {{ message }}</span>
+  </div>
+</template>
+
+<template id="3f">
+  <div class="box">
+    <h1>{{ title }}</h1>
+    <p>{{ message }}</p>
+    {{ if (author.getName()) }}
+    <div>{{ author.name }}</div>
+    {{ endif }}
+    <span>more here from {{ message }}</span>
+  </div>
+</template>
+
+<template id="3g">
+  <div class="box">
+    <h1>{{ title }}</h1>
+    <p>{{ message }}</p>
+    {{ if (title && (author)) }}
+    <div>{{ author.name }}</div>
+    {{ endif }}
+    <span>more here from {{ message }}</span>
+  </div>
+</template>
+
+<template id="3h">
+  <div class="box">
+    <h1>{{ title }}</h1>
+    <p>{{ message }}</p>
+    {{ if (title === 'Hello' || (author.name.toLowerCase() === 'pix')) }}
+    <div>{{ author.name }}</div>
+    {{ endif }}
+    <span>more here from {{ message }}</span>
+  </div>
+</template>
+
+<template id="3i">
+  <div class="box">
+    <h1>{{ title }}</h1>
+    <p>{{ message }}</p>
+    {{ if (title === 'Hello' && (author.name.toLowerCase() === 'pix')) }}
+    <div>{{ author.name }}</div>
+    {{ endif }}
+    <span>more here from {{ message }}</span>
   </div>
 </template>
 
@@ -39,17 +117,110 @@
   const t1 = document.getElementById('1');
   const t2 = document.getElementById('2');
   const t3 = document.getElementById('3');
+  const t3c = document.getElementById('3c');
+  const t3d = document.getElementById('3d');
+  const t3e = document.getElementById('3e');
+  const t3f = document.getElementById('3f');
+  const t3g = document.getElementById('3g');
+  const t3h = document.getElementById('3h');
+  const t3i = document.getElementById('3i');
 
   const d1 = {title: 'Hello, World', message: 'Lorem Ipsum'};
   const d2 = {title: 'Hello, World 2', message: 'Lorem Ipsum 2'};
+  const d3 = {title: 'Hello, World 3', message: 'Lorem Ipsum 3'};
+  const d3b = {title: 'Hello, World 3', message: 'Lorem Ipsum 3', author: { name: 'pix', getName: function () { return this.name } }};
+
+
+  const result = `<div class="box">
+    <h1>Hello, World 3</h1>
+    <p>Lorem Ipsum 3</p>
+    
+    <div>pix</div>
+    
+    <span>more here from Lorem Ipsum 3</span>
+  </div>`;
+
+  const resultFalse = `<div class="box">
+    <h1>Hello, World 3</h1>
+    <p>Lorem Ipsum 3</p>
+    
+    <span>more here from Lorem Ipsum 3</span>
+  </div>`;
 
   function test() {
-    console.log(t1.parse(d1).outerHTML);
+    let html = t1.parse(d1).outerHTML
+    console.log(html, html == `<div class="box">
+    <h1>Hello, World</h1>
+    <p>Lorem Ipsum</p>
+  </div>`)
   }
+  test()
 
   function test2() {
-    console.log(t2.parse(d2).outerHTML);
+    let html = t2.parse(d2).outerHTML
+    console.log(html, html == `<box>
+    <h1>Hello, World 2</h1>
+    <p>Lorem Ipsum 2</p>
+    <p>Hello, World 2</p>
+  </box>`)
   }
+  test2()
+
+  function test3() {
+    let html = (t3.parse(d3).outerHTML);
+    console.log(html, html == resultFalse)
+  }
+  test3()
+
+  
+
+  function test3b() {
+    let html = (t3.parse(d3b).outerHTML);
+    console.log(html, html == result);
+  }
+  test3b()
+
+  function test3c() {
+    let html = (t3c.parse(d3b).outerHTML);
+    console.log(html, html == result);
+  }
+  test3c()
+
+  function test3d() {
+    let html = (t3d.parse(d3b).outerHTML);
+    console.log(html, html == result);
+  }
+  test3d()
+
+  function test3e() {
+    let html = (t3e.parse(d3b).outerHTML);
+    console.log(html, html == result);
+  }
+  test3e()
+
+  function test3f() {
+    let html = (t3f.parse(d3b).outerHTML);
+    console.log(html, html == result);
+  }
+  test3f()
+
+  function test3g() {
+    let html = (t3g.parse(d3b).outerHTML);
+    console.log(html, html == result);
+  }
+  test3g()
+  
+  function test3h() {
+    let html = (t3h.parse(d3b).outerHTML);
+    console.log(html, html == result);
+  }
+  test3h()
+
+  function test3i() {
+    let html = (t3i.parse(d3b).outerHTML);
+    console.log(html, html == resultFalse);
+  }
+  test3i()
 </script>
 
 </body>
