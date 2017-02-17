@@ -26,14 +26,49 @@ Object.assign(HTMLTemplateElement.prototype, {
     ENDIF: 4
   },
 
+  compare : {
+    '==': function (a, b) { return a == b },
+    '===': function (a, b) { return a === b },
+    '!=': function (a, b) { return a != b },
+    '!==': function (a, b) { return a !== b },
+    '<': function (a, b) { return a < b },
+    '>': function (a, b) { return a > b },
+    '<=': function (a, b) { return a <= b },
+    '>=': function (a, b) { return a >= b },
+    '&amp;&amp;': function (a, b) { return !!a && !!b },
+    '||': function (a, b) { return !!a || !!b }
+  },
+
   parse(data) {
     let html = this.getRootNodeAsHtml();
     const tokens = this.getTokens(html);
     let delta = 0; // when replacing tokens, increase/decrease delta length so next token would be replaced in correct position of html
-    tokens.forEach(token => {
-      const replaceWith = this.parseToken(token, data);
+    let skip = -1;
+    let tempDelta = 0;
+    tokens.forEach((token, ix) => {
+      //console.log(token, ix);
+      let replaceWith = '';
+      if (skip >= 0) {
+        if (token.type === this.tokenTypes.ENDIF) {
+          html = html.substr(0, skip) + replaceWith + html.substr(token.endsAt - tempDelta);
+          delta += (token.endsAt - tempDelta) - skip ;
+          skip = -1;
+        }
+        return;
+      }
+
+      replaceWith = this.parseToken(token, data);
+      if (token.type === this.tokenTypes.IF) {
+        if (replaceWith === false) {
+          skip = token.startsAt - delta;
+          replaceWith = '';
+        } else {
+          replaceWith = '';
+        }
+      } 
       html = html.substr(0, token.startsAt - delta) + replaceWith + html.substr(token.endsAt - delta);
       delta += token.length - replaceWith.length;
+      tempDelta += token.length - replaceWith.length;
     });
     return this.htmlToNode(html);
   },
@@ -62,7 +97,7 @@ Object.assign(HTMLTemplateElement.prototype, {
   getTokens(html) {
     let tokens = [];
     let startAt = 0;
-    while(token = this.getNextToken(html, startAt)) {
+    while (token = this.getNextToken(html, startAt)) {
       tokens.push(token);
       startAt = token.endsAt;
     }
@@ -131,24 +166,103 @@ Object.assign(HTMLTemplateElement.prototype, {
     let parts = value.split('.');
     const l = parts.length;
     let curNestData = data;
+
+    const isFunction = (obj) => {
+      return Object.prototype.toString.call(obj) == '[object Function]';
+    }
+
     for (let k = 0; k < l; k++) {
       if (curNestData[parts[k]] === undefined) {
         return '';
       } else {
-        curNestData = curNestData[parts[k]];
+        if (isFunction(curNestData[parts[k]])) {
+          curNestData = curNestData[parts[k]]();
+        } else {
+          curNestData = curNestData[parts[k]];
+        }
       }
     }
     return curNestData;
   },
 
+  tokenRegex: /(\(\)|\&amp;\&amp;|\(|\)|===|==|>=|<=|!==|!=|<|>|\|\|)+/,
+
   // IF
   parseToken3(value, data) {
-    return 'if';
+    let cValue = value.slice(2).trim();
+    const tokens = cValue.split(this.tokenRegex);
+    let leftSide = null,
+      rightSide = null,
+      compareFn = null,
+      startGroup = false,
+      store = {
+        left: null,
+        fn: null
+      };
+    //console.log(cValue, tokens);
+
+    function getStringOrValue(token) {
+      let newVal;
+      if (token.lastIndexOf('\'', 0) === 0 || token.lastIndexOf('"', 0) === 0) {
+        return token.substr(1,token.length -2);
+      } else {
+        newVal = this.parseToken2(token, data);
+        if (newVal == null) {
+          newVal = undefined;
+        }
+      }
+      return newVal;
+    }
+
+    tokens.forEach((tok) => {
+      let token = tok.trim();
+      if (token === '' || token === '()') {
+        //nothing
+        return;
+      }
+      if (token === '(') {
+        startGroup = true;
+        if (leftSide !== null) {
+          store.left = leftSide;
+          store.fn = compareFn;
+          compareFn = null;
+          leftSide = null;
+        }
+        return;
+      }
+      if (token === ')') {
+        if (store.left === null) {
+          return;
+        }
+        startGroup = false;
+        rightSide = leftSide;
+        leftSide = store.left;
+        compareFn = store.fn;
+      }
+      if (!this.compare[token]) {
+        //variable or string
+        if (leftSide === null) {
+          leftSide = getStringOrValue.call(this, token);
+        } else if (rightSide === null) {
+          rightSide = getStringOrValue.call(this, token);
+        }
+      } else {
+        compareFn = this.compare[token];
+      }
+      if (leftSide !== null && rightSide !== null && compareFn !== null) {
+        leftSide = compareFn(leftSide, rightSide);
+        rightSide = null;
+      }
+    });
+
+    //console.log(leftSide, !!leftSide);
+
+    return !!leftSide;
   },
 
   // ENDIF
   parseToken4(value, data) {
-    return 'endif';
+    return '';
   },
 
 });
